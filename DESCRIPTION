@@ -1,12 +1,21 @@
 Package: augr
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Network-Based Agent Simulation
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R:
+    person(
+      "Oliver",
+      "Saal",
+      email = "oliver.saal@abo.fi",
+      role = c("aut", "cre"),
+      comment = c(ORCID = "0000-0002-4870-0458")
+    )
+Description: A package for simulating changed based on estimated psychological
+    networks. Provide 'augr' your network structure and original data, determine
+    how many rounds of simulation, and let it tell you what happens.
+    Work in progress. Aims to be compatible with common psychometric network
+    analysis packages, like qgraph, psychonetrics and bootnet.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 URL: https://github.com/osaal/augr
