@@ -22,7 +22,8 @@ netupdate <- function(
     scale,
     type = c("standardized", "raw"),
     stdc = 1,
-    verbose = TRUE
+    verbose = TRUE,
+    ...
     ) {
 
   # Store arguments for later
@@ -37,24 +38,8 @@ netupdate <- function(
     }
   }
 
-  # Extract relevant information
-  if (is(input, "qgraph")) {
-    # TODO: Data must be explicitly given, note this
-    # TODO: Unit test for wmat
-    # TODO: Unit test for varnames
-    if (verbose) { message("Input is qgraph, extracting wmat and varnames from graph") }
-
-    data <- data
-    wmat <- input$Arguments$input
-    varnames <- names(input$graphAttributes$Nodes$labels)
-    colnames(wmat) <- rownames(wmat) <- varnames
-    # TODO: Extract qgraph information
-  }
-  if (is(input, "bootnetResult")) {
-    # TODO: Extract bootnetResult information
-    if (verbose) { message("Input is bootnetResult, extracting wmat and varnames from graph") }
-  }
-
+  # Extract and reformat data for use inside function
+  data <- extract_data(..., unlock=TRUE)
   # EVERYTHING UNDER HERE IS UNTESTED!!!
 
   #varnames <- colnames(wmat)

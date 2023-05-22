@@ -17,13 +17,18 @@ disable_internals <- function() {
 
 ext_check <- function() {
   caller <- as.list(sys.call(-1))[[1]]
-  external <- rlang::caller_env()$external
+  external <- rlang::caller_env()$unlock
   FLAG <- get0(
     "NETUPDATE_EXTERNAL_USE_FLAG",
     envir = .GlobalEnv,
     inherits = FALSE,
     ifnotfound = FALSE)
   if (!external | FLAG) {
-    return(stop(paste0(caller, " is for internal use only!")))
+    return(
+      cli::cli_abort(c(
+        "{.fn {caller}} is currently locked!",
+        "i" = "Did you unlock the internal function for external use?"
+      ))
+    )
   }
 }
