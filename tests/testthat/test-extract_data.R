@@ -1,3 +1,5 @@
-test_that("multiplication works", {
-  expect_equal(2 * 2, 4)
+# EVERY INTERNAL FUNCTION MUST PASS THIS!
+test_that("externality check", {
+  rlang::env_poke(.GlobalEnv, "NETUPDATE_EXTERNAL_USE_FLAG", FALSE)
+  expect_error(extract_data(external = FALSE))
 })

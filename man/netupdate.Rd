@@ -2,16 +2,21 @@
 % Please edit documentation in R/netupdate.R
 \name{netupdate}
 \alias{netupdate}
-\title{Update data based on network configuration}
+\title{Title}
 \usage{
-netupdate(...)
+netupdate(
+  input,
+  data,
+  wmat,
+  scale,
+  type = c("standardized", "raw"),
+  stdc = 1,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{...}{Stuff that goes in.}
-}
-\value{
-Nothing.
+\item{verbose}{}
 }
 \description{
-Update data based on network configuration
+Title
 }

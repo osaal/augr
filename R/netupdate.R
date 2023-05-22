@@ -1,8 +1,17 @@
-#' Update data based on network configuration
+#' Title
 #'
-#' @param ... Stuff that goes in.
+#' @param input
+#' @param data
+#' @param wmat
+#' @param scale
+#' @param type
+#' @param stdc
+#' @param verbose
 #'
-#' @return Nothing.
+#' @importFrom methods is
+#' @importFrom stats rbinom
+#'
+#' @return
 #' @export
 #'
 #' @examples
