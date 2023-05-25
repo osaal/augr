@@ -2,7 +2,6 @@
 #'
 #' @param input
 #' @param data
-#' @param wmat
 #' @param scale
 #' @param type
 #' @param stdc
@@ -16,9 +15,8 @@
 #'
 #' @examples
 netupdate <- function(
-    input,
+    network,
     data,
-    wmat,
     scale,
     type = c("standardized", "raw"),
     stdc = 1,
@@ -39,7 +37,7 @@ netupdate <- function(
   }
 
   # Extract and reformat data for use inside function
-  data <- extract_data(..., unlock=TRUE)
+  processed <- extract_data(network, unlock=TRUE)
   # EVERYTHING UNDER HERE IS UNTESTED!!!
 
   #varnames <- colnames(wmat)
@@ -52,7 +50,7 @@ netupdate <- function(
   class(result) <- "netupdate"
   result$arguments <- arguments
   result$data <- data
-  result$wmat <- wmat
+  result$wmat <- processed$wmat
 
   # Determine updating probabilities for each connection
   for (i in seq_along(varnames)) {

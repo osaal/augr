@@ -23,7 +23,7 @@ ext_check <- function() {
     envir = .GlobalEnv,
     inherits = FALSE,
     ifnotfound = FALSE)
-  if (!external | FLAG) {
+  if (!external & !FLAG) {
     return(
       cli::cli_abort(c(
         "{.fn {caller}} is currently locked!",

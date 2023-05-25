@@ -10,7 +10,7 @@
 #' @export
 #'
 #' @examples
-extract_data <- function(..., unlock = FALSE) {
+extract_data <- function(network, ..., unlock = FALSE, verbose = FALSE) {
   # 1. Recognise type of input
   # 2. Extract relevant data from input
   # 3. Combine with other inputted data (e.g., data matrix)
@@ -33,47 +33,62 @@ extract_data <- function(..., unlock = FALSE) {
   # Save type of user-supplied network object
   if("network" %in% names(funinput)) {
     network <- funinput$network
+    if (verbose) { message ("Input contained network, processing network") }
   }
-
-  # Retrieve user-supplied ready material
-  if("data"  %in% names(funinput)) { data  <- funinput$data  }
-  if("wmat"  %in% names(funinput)) { wmat  <- funinput$wmat  }
-  #if("scale" %in% names(funinput)) { scale <- funinput$scale }
-  # TODO: Implement custom scale addition
 
   # --- GRAPH OBJECT EXTRACTION ------------------------------------------------
-  # SHOULD THESE BE MOVED TO THEIR OWN FUNCTION?
-  # Graph objects from other packages
   if (is(network, "qgraph")) {
-    # TODO: Data must be explicitly given, note this
-    # TODO: Unit test for wmat
-    # TODO: Unit test for varnames
-    if (verbose) { message("Input is qgraph, extracting wmat and varnames from graph") }
+    if (verbose) {
+      message("Input is qgraph, extracting wmat and varnames from graph")
+    }
 
-    data <- data
-    wmat <- input$Arguments$input
-    varnames <- names(input$graphAttributes$Nodes$labels)
+    wmat <- network$Arguments$input
+    varnames <- names(network$graphAttributes$Nodes$labels)
     colnames(wmat) <- rownames(wmat) <- varnames
-    # TODO: Extract qgraph information
   }
   if (is(network, "bootnetResult")) {
-    # TODO: Extract bootnetResult information
-    if (verbose) { message("Input is bootnetResult, extracting wmat and varnames from graph") }
+    if (verbose) {
+      message("Input is bootnetResult, extracting wmat and varnames from graph")
+    }
+
+    wmat <- network$graph
+    varnames <- network$labels
+    colnames(wmat) <- rownames(wmat) <- varnames
   }
   if (is(network, "bootnet")) {
+    if (verbose) {
+      message("Input is bootnet, extracting wmat and varnames from graph")
+    }
 
+    wmat <- network$sample$graph
+    varnames <- network$sample$labels
+    colnames(wmat) <- rownames(wmat) <- varnames
   }
   if (is(network, "psychonetrics")) {
+    if (verbose) {
+      message("Input is psychonetrics, extracting wmat and varnames from graph")
+    }
 
+    wmat <- network@modelmatrices[["fullsample"]][["omega"]]
+    varnames <- network@sample@variables[["label"]]
+  }
+  if (is(network, "matrix")) {
+    if (verbose) {
+      message("Input is matrix, returning as-is")
+    }
+
+    wmat <- network
+    varnames <- rownames(wmat) <- colnames(wmat)
+
+    if (is.null(varnames)) { message("No names found in input matrix!") }
   }
 
-  # --- R SYSTEM CLASS EXTRACTION ----------------------------------------------
-  # TODO: Check which object will be extracted here! It is not "network", but what else could it be?
-  # R system classes
-  if (is(data, "matrix")) {
+  # --- RETURN CONSTRUCTION ----------------------------------------------------
 
-  }
-  if (is(data, "data.frame")) {
-    # This also catches tibbles!
-  }
+  extracted$input$network <- network
+  extracted$input$type <- class(network)[1]
+  extracted$weights <- wmat
+  extracted$variables <- varnames
+
+  return(extracted)
 }
