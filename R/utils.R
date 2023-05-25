@@ -13,6 +13,16 @@ disable_internals <- function() {
   message("Usage of internal functions disabled with global environment flag")
 }
 
+enable_verbose <- function() {
+  rlang::env_poke(.GlobalEnv, "NETUPDATE_VERBOSE_FLAG", TRUE)
+  message("Verbose output enabled with global environment flag")
+}
+
+disable_verbose <- function() {
+  rlang::env_poke(.GlobalEnv, "NETUPDATE_VERBOSE_FLAG", FALSE)
+  message("Verbose output disabled with global environment flag")
+}
+
 # Externality checker - used in all internal-only functions
 
 ext_check <- function() {
