@@ -46,7 +46,7 @@ setClass(
 
 AugrData <- function(data, level, names) {
 
-  if (is.na(names)) {
+  if (is.na(names)[1]) {
     names <- colnames({{ data }}) # Embrasure for safety
   } else {
     names <- names
@@ -71,6 +71,55 @@ augr <- function(network, data, scale, type, nRounds = 100) {
   for (round in seq_along(nRounds)) {
     # Do something
   }
+}
+
+extract_data <- function(data, ..., unlock = FALSE, verbose = FALSE) {
+  # Constructs an AugrData object.
+
+  dots <- list(...)
+
+  if ("names" %in% names(dots)) {
+    names <- dots$names
+  } else {
+    names <- colnames(data)
+  }
+
+  if ("level" %in% names(dots)) {
+    if (!is.character(dots$level)) {
+      cli::cli_abort(c("Level must be a character vector"))
+    }
+    level <- dots$level <- stringr::str_to_lower(dots$level)
+  } else {
+    if (max(data) - min(data) <= 6) {
+      level <- "ordinal"
+    } else {
+      level <- "quantitative"
+    }
+  }
+
+  if (!inherits(data, "data.frame")) {
+    cli::cli_warn(c(
+      "Supplied data might not be suitable for Augr",
+      "i" = "Make sure the data is a matrix, tibble or data frame"
+    ))
+  }
+
+  dataobject <- AugrData(
+    data = data,
+    level = level,
+    names = names
+  )
+
+  if (verbose) {
+    cli::cli_alert_info(c(
+      "Extracted data of type {class(dataobject@data)} with ",
+      "{nrow(dataobject@data)} rows and {ncol(dataobject@data)} variables. \n",
+      "{cli::symbol$bullet} Variable level defined as {dataobject@level}."
+    ))
+  }
+
+  return (dataobject)
+
 }
 
 extract_network <- function(network, ..., unlock = FALSE, verbose = FALSE) {
@@ -162,10 +211,13 @@ extract_network <- function(network, ..., unlock = FALSE, verbose = FALSE) {
     extracted@weights <- network$weights
     extracted@variables <- network$variables
   }
-  cli::cli_alert_info(c(
-    "Extracted {extracted@type} network with {length(extracted@variables)} ",
-    "variable{?s}"
-  ))
+
+  if (verbose) {
+    cli::cli_alert_info(c(
+      "Extracted {extracted@type} network with {length(extracted@variables)} ",
+      "variable{?s}"
+    ))
+  }
 
   return(extracted)
 
