@@ -1,6 +1,6 @@
 #' Title
 #'
-#' @param input
+#' @param network
 #' @param data
 #' @param scale
 #' @param type
@@ -27,17 +27,10 @@ netupdate <- function(
   # Store arguments for later
   arguments <- as.list(match.call())
 
-  # netupdate only takes one graph at a time
-  # TODO: Avoid nesting?
-  if (is.vector(input)) { stop("Input must be a graph object, not a vector") }
-  if (is.list(input)) {
-    if (!is(input, "qgraph")) {
-      stop("Input must be a graph object, not a list")
-    }
-  }
-
   # Extract and reformat data for use inside function
   processed <- extract_data(network, unlock=TRUE)
+  varnames <- processed$variables
+  wmat <- processed$weights
   # EVERYTHING UNDER HERE IS UNTESTED!!!
 
   #varnames <- colnames(wmat)
@@ -50,7 +43,7 @@ netupdate <- function(
   class(result) <- "netupdate"
   result$arguments <- arguments
   result$data <- data
-  result$wmat <- processed$wmat
+  result$wmat <- wmat
 
   # Determine updating probabilities for each connection
   for (i in seq_along(varnames)) {
