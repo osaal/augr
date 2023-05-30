@@ -67,6 +67,7 @@ AugrData <- function(data, level, names) {
 augr <- function(network, data, scale, type, nRounds = 100) {
 
   if(!is(network, "AugrNetwork")) { extract_network(network) }
+  if(!is(data, "AugrData")) { extract_data(data) }
 
   for (round in seq_along(nRounds)) {
     # Do something
