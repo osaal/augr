@@ -8,9 +8,9 @@ setClass(
     variables = "character"
   ),
   prototype = list(
-    type = NA_character_,
+    type = character(0),
     weights = matrix(NA),
-    variables = NA_character_
+    variables = character(0)
   )
 )
 
@@ -26,25 +26,25 @@ AugrNetwork <- function(type, weights, variables) {
     variables = variables)
 }
 
-### --- END OF AugrNetwork -----------------------------------------------------
-
 ### --- AugrData S4 CLASS DEFINITION -------------------------------------------
 
 setClass(
   "AugrData",
   slots = c(
     data = "matrix",
+    names = "character",
     level = "character",
-    names = "character"
+    scale = "numeric"
   ),
   prototype = list(
     data = matrix(NA),
+    names = character(0),
     level = character(0),
-    names = NA_character_
+    scale = numeric(0)
   )
 )
 
-AugrData <- function(data, level, names) {
+AugrData <- function(data, names, level, scale) {
 
   if (is.na(names)[1]) {
     names <- colnames({{ data }}) # Embrasure for safety
@@ -57,21 +57,49 @@ AugrData <- function(data, level, names) {
   methods::new(
     "AugrData",
     data = data,
+    names = names,
     level = level,
-    names = names
+    scale = scale
   )
 }
 
-### --- END OF AugrData --------------------------------------------------------
+### --- MAIN FUNCTIONS ---------------------------------------------------------
+Augr <- function(data, network, nRounds = 100, ..., verbose = FALSE) {
 
-augr <- function(network, data, scale, type, nRounds = 100) {
-
-  if(!is(network, "AugrNetwork")) { extract_network(network) }
-  if(!is(data, "AugrData")) { extract_data(data) }
-
-  for (round in seq_along(nRounds)) {
-    # Do something
+  if(!is(network, "AugrNetwork")) {
+    if (verbose) {
+      cli::cli_alert_info("Network is not an AugrNetwork, running extract_network()")
+    }
+    network <- extract_network(network, unlock = T)
   }
+  if(!is(data, "AugrData")) {
+    if (verbose) {
+      cli::cli_alert_info("Data is not AugrData, running extract_data()")
+    }
+    data <- extract_data(data, unlock = T)
+  }
+
+  if (verbose) {
+    cli::cli_alert_info("Retrieving probabilities...")
+  }
+  probs <- probabilities(network, type = "raw", unlock = T)
+
+  if (verbose) {
+    cli::cli_alert_info("Starting updating...")
+  }
+  for (round in seq_len(nRounds)) {
+    if (verbose) {
+      cli::cli_alert_info("Round {round} of {nRounds} started...")
+    }
+    data <- update_data(data, probs = probs, unlock = T)
+    if (verbose) {
+      cli::cli_alert_info("...done!")
+    }
+  }
+  if (verbose) {
+    cli::cli_alert_info("Updating done!")
+  }
+  return(list(data = data, network = network, nRounds = nRounds))
 }
 
 extract_data <- function(data, ..., unlock = FALSE, verbose = FALSE) {
@@ -93,8 +121,10 @@ extract_data <- function(data, ..., unlock = FALSE, verbose = FALSE) {
   } else {
     if (max(data) - min(data) <= 6) {
       level <- "ordinal"
+      scale <- c(min(data), max(data), 1)
     } else {
       level <- "quantitative"
+      scale <- NA
     }
   }
 
@@ -107,8 +137,9 @@ extract_data <- function(data, ..., unlock = FALSE, verbose = FALSE) {
 
   dataobject <- AugrData(
     data = data,
+    names = names,
     level = level,
-    names = names
+    scale = scale
   )
 
   if (verbose) {
@@ -224,5 +255,108 @@ extract_network <- function(network, ..., unlock = FALSE, verbose = FALSE) {
 
 }
 
+probabilities <- function(
+    network,
+    type = c("standardized", "raw"),
+    ...,
+    unlock = FALSE,
+    verbose = FALSE
+  ) {
 
+  # Externality check
+  ext_check()
 
+  # Preinitialization
+  Nvars <- length(network@variables)
+  probabilities <- numeric(0)
+
+  if (!is(network, "AugrNetwork")) {
+    stop(paste0("Function uses AugrNetwork as input, not ", class(network)))
+  }
+
+  # Determine updating probabilities for each connection
+  for (i in seq_len(Nvars)) {
+    cumprob = 1
+    for (j in seq_len(Nvars)) {
+      if (network@weights[i,j] != 0) {
+        if (type == "standardized") {
+          cumprob <- cumprob + network@weights[i,j]
+        } else {
+          cumprob <- cumprob * network@weights[i,j]
+        }
+      }
+    }
+    if (type == "standardized") {
+      old <- cumprob
+      cumprob <- tanh(cumprob/(1/Nvars))
+      if (verbose) {
+        cli::cli_alert_info("Node {i} adjusted from {old} to {cumprob}")
+      }
+  }
+
+    probabilities[i] <- cumprob
+
+    if (verbose) {
+      cli::cli_alert_info("Node {i} probability: {probabilities[i]}")
+    }
+
+  }
+
+  return(probabilities)
+
+}
+
+update_data <- function(input, probs, ..., unlock = FALSE, verbose = FALSE) {
+
+  # Externality check
+  ext_check()
+
+  # Data extraction
+  data <- input@data
+  varnames <- input@names
+  Nvars <- length(varnames)
+  Nobs <- nrow(data)
+  level <- input@level
+  scale <- input@scale
+
+  if (ncol(data) != Nvars) {
+    cli::cli_abort(c(
+      "Name count and column count does not match!",
+      "i" = "Check if your AugrData is defined correctly"
+    ))
+  }
+
+  # Pre-initialization
+  simres <- matrix(nrow = nrow(data), ncol = ncol(data))
+  colnames(simres) <- varnames
+  value <- numeric(0)
+
+  for (obs in seq_len(Nobs)) {
+    for (var in seq_len(Nvars)) {
+      if (is.na(data[obs, var])) { next }
+
+      prob <- probs[var]
+      draw <- rbinom(1, 1, abs(prob))
+
+      if (!draw) {
+        simres[obs,var] = data[obs,var]
+        next
+      }
+
+      if(prob > 0) { value <- data[obs,var] + scale[3] }
+      if(prob < 0) { value <- data[obs,var] - scale[3] }
+
+      if(value > scale[2]) { value <- scale[2] }
+      if(value < scale[1]) { value <- scale[1] }
+
+      simres[obs,var] <- value
+    }
+  }
+  result <- AugrData(
+    data = simres,
+    names = varnames,
+    level = level,
+    scale = scale
+  )
+  return(result)
+}
